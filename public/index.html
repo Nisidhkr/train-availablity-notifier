@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Train Seat Monitor</title>
+
+  <!-- React CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 40px;
+    }
+    .card {
+      background: #fff;
+      max-width: 420px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-bottom: 15px;
+    }
+    .row {
+      margin: 8px 0;
+    }
+    button {
+      margin-top: 15px;
+      margin-right: 10px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    function App() {
+      const [data, setData] = React.useState(null);
+      const [error, setError] = React.useState(null);
+
+      const loadStatus = async () => {
+        try {
+          const res = await fetch("/api/train/status");
+
+          if (!res.ok) {
+            throw new Error("API error: " + res.status);
+          }
+
+          const json = await res.json();
+          setData(json);
+          setError(null);
+        } catch (err) {
+          console.error("Frontend error:", err);
+          setError("Failed to load train data");
+        }
+      };
+
+      const bookSeat = async () => {
+        await fetch("/api/train/book", { method: "POST" });
+        loadStatus();
+      };
+
+      const cancelSeat = async () => {
+        await fetch("/api/train/cancel", { method: "POST" });
+        loadStatus();
+      };
+
+      React.useEffect(() => {
+        loadStatus();
+      }, []);
+
+      if (error) {
+        return (
+          <div className="card">
+            <h2>🚆 Train Seat Monitor</h2>
+            <p className="error">{error}</p>
+          </div>
+        );
+      }
+
+      if (!data) {
+        return (
+          <div className="card">
+            <h2>🚆 Train Seat Monitor</h2>
+            <p>Loading data from server...</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="card">
+          <h2>🚆 Train Seat Monitor</h2>
+
+          <div className="row">Total Seats: <b>{data.totalSeats}</b></div>
+          <div className="row">Booked Seats: <b>{data.bookedSeats}</b></div>
+          <div className="row">Available Seats: <b>{data.availableSeats}</b></div>
+          <div className="row">Waiting List: <b>{data.waiting}</b></div>
+
+          <button onClick={bookSeat}>➕ Book Seat</button>
+          <button onClick={cancelSeat}>➖ Cancel Seat</button>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
